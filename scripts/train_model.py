@@ -15,15 +15,7 @@ import math
 import numpy as np
 import six
 
-from links.gru import GRU
 from links.lstm import LSTM
-from links.sumcontext_bilinear import SumContextBilinear
-from links.skip_cnn import SkipCNN
-from links.baseline import Baseline
-from links.transfer import Transfer
-from links.asymmetric import Asymmetric
-from links.asymmetric_tanh import AsymmetricTanh
-from links.asymmetric_tanh_deep import AsymmetricTanhDeep
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--save-path-model', '--save-path', '-savem', default=None, type=str,
@@ -87,11 +79,11 @@ xp = cuda.cupy if args.gpu >= 0 else np
 chainer.Function.type_check_enable = False
 
 if args.save_path_model:
-    args.save_path_model = args.save_path_model.rstrip("/")+"/"
-args.data_path = args.data_path.rstrip("/")+"/"
+    args.save_path_model = args.save_path_model.rstrip("/") + "/"
+args.data_path = args.data_path.rstrip("/") + "/"
 
 if args.seed is None:
-    args.seed = np.random.randint(100000)# random seed
+    args.seed = np.random.randint(100000)  # random seed
 
 
 def load_processed_dataset(load_corpus):
@@ -101,37 +93,40 @@ def load_processed_dataset(load_corpus):
     train_data = json.load(open(load_corpus + "train_data.json"))
     valid_data = json.load(open(load_corpus + "valid_data.json"))
     test_data = json.load(open(load_corpus + "test_data.json"))
-    print('', time.time()-prev, 's')
+    print('', time.time() - prev, 's')
     prev = time.time()
 
     print(' load vectors')
-    train_vectors = np.load(load_corpus + "train_vectors.npy").astype(np.float32)
-    valid_vectors = np.load(load_corpus + "valid_vectors.npy").astype(np.float32)
+    train_vectors = np.load(
+        load_corpus + "train_vectors.npy").astype(np.float32)
+    valid_vectors = np.load(
+        load_corpus + "valid_vectors.npy").astype(np.float32)
     test_vectors = np.load(load_corpus + "test_vectors.npy").astype(np.float32)
-    print('', time.time()-prev, 's')
+    print('', time.time() - prev, 's')
     prev = time.time()
 
     print(' set vectors train')
     train_data = []
     train_data = train_vectors
     print(train_data.shape)
-    print('', time.time()-prev, 's')
+    print('', time.time() - prev, 's')
     prev = time.time()
 
     def swap(vec):
         return np.concatenate([vec[:4], vec[5:6], vec[4:5]], axis=0)
+
     def iterate(dataset, vectors):
         vecL = [vectors[i] if v["answer"] == u"1" else swap(vectors[i]) for i, (k, v)
                 in enumerate(sorted(dataset.iteritems(), key=lambda x:x[0]))]
         matrix = np.concatenate(vecL, axis=0)
-        return matrix.reshape((len(vecL), matrix.shape[0]/len(vecL), matrix.shape[1]))
+        return matrix.reshape((len(vecL), matrix.shape[0] / len(vecL), matrix.shape[1]))
 
     print(' set vectors valid, test')
     valid_data = iterate(valid_data, valid_vectors)
     print(valid_data.shape)
     test_data = iterate(test_data, test_vectors)
     print(test_data.shape)
-    print('', time.time()-prev, 's')
+    print('', time.time() - prev, 's')
     prev = time.time()
 
     print('# of train data =', len(train_data))
@@ -142,38 +137,8 @@ def load_processed_dataset(load_corpus):
 
 
 def setup_model(args):
-    if args.model_type.lower() == "gru":
-        model = GRU(args)
-    elif args.model_type.lower() == "grumulti":
-        model = GRUmulti(args)
-    elif args.model_type.lower() == "grumultimax":
-        model = GRUmultiMax(args)
-    elif args.model_type.lower() == "grumultisoftmax":
-        model = GRUmultiSoftmax(args)
-    elif args.model_type.lower() == "lstm":
+    if args.model_type.lower() == "lstm":
         model = LSTM(args)
-    elif args.model_type.lower() == "lstmmulti":
-        model = LSTMmulti(args)
-    elif args.model_type.lower() == "lstmmultimax":
-        model = LSTMmultiMax(args)
-    elif args.model_type.lower() == "lstmmultisoftmax":
-        model = LSTMmultiSoftmax(args)
-    elif args.model_type.lower() == "lstmmultiover":
-        model = LSTMmultiOver(args)
-    elif args.model_type.lower() == "sumcontext":
-        model = SumContextBilinear(args)
-    elif args.model_type.lower() == "skipcnn":
-        model = SkipCNN(args)
-    elif args.model_type.lower() == "baseline":
-        model = Baseline(args)
-    elif args.model_type.lower() == "transfer":
-        model = Transfer(args)
-    elif args.model_type.lower() == "asymmetric":
-        model = Asymmetric(args)
-    elif args.model_type.lower() == "asymmetrictanh":
-        model = AsymmetricTanh(args)
-    elif args.model_type.lower() == "asymmetrictanhdeep":
-        model = AsymmetricTanhDeep(args)
     else:
         print('set valid model type name')
         exit()
@@ -187,7 +152,8 @@ def setup_model(args):
 
 def train_model(args):
     print('load data')
-    train_data, valid_data, test_data = load_processed_dataset(args.load_corpus)
+    train_data, valid_data, test_data = load_processed_dataset(
+        args.load_corpus)
 
     print('setup model, optimizer')
     # Replicability of random initialization.
@@ -197,12 +163,13 @@ def train_model(args):
     # Random parameter test
     #print('evaluate test')
     #loss_mean, correct = evaluate(test_data, model, args)
-    #print('testloss: {:.5f}, accuracy: {:.4f}\t{}'.format(
-    #    loss_mean, float(correct/len(test_data)), datetime.today().strftime("%Y/%m/%d,%H:%M:%S") ))
+    # print('testloss: {:.5f}, accuracy: {:.4f}\t{}'.format(
+    # loss_mean, float(correct/len(test_data)),
+    # datetime.today().strftime("%Y/%m/%d,%H:%M:%S") ))
 
-    best_valid = 0.5# start from chance rate
+    best_valid = 0.5  # start from chance rate
     subbest_test = 0.
-    
+
     for i_epoch in range(args.n_epoch):
         # Training
         train_epoch(model, optimizer, train_data, valid_data, i_epoch, args)
@@ -211,33 +178,34 @@ def train_model(args):
         print('evaluate')
         loss_mean, correct = evaluate(valid_data, model, args)
         print('epoch {} validloss: {:.5f}, accuracy: {:.4f}\t{}'.format(
-            i_epoch, loss_mean, float(correct/len(valid_data)),
-            datetime.today().strftime("%Y/%m/%d,%H:%M:%S") ))
+            i_epoch, loss_mean, float(correct / len(valid_data)),
+            datetime.today().strftime("%Y/%m/%d,%H:%M:%S")))
 
         # If new record in validation data, update record and test in test data
         # Note: Even if the existing best TEST record is better than the new TEST record,
         #       it must be updated if meeting new VALIDATION record,
         #       because we can only see validation results when training.
-        if float(correct/len(valid_data)) > best_valid:
+        if float(correct / len(valid_data)) > best_valid:
             print('** new record')
             if args.save_path_model:
                 save_name = args.save_path_model + args.model_name + \
-                            ".%d.%s." % (i_epoch+1, datetime.today().strftime("%Y%m%d.%H%M%S"))
+                    ".%d.%s." % (
+                        i_epoch + 1, datetime.today().strftime("%Y%m%d.%H%M%S"))
                 save(model, optimizer, save_name, args)
-            best_valid = float(correct/len(valid_data))
+            best_valid = float(correct / len(valid_data))
 
             print('evaluate test')
             loss_mean, correct = evaluate(test_data, model, args)
 
             print('epoch {} testloss: {:.4f}, accuracy: {:.3f}\t{}'.format(
-                i_epoch, loss_mean, float(correct/len(test_data)),
-                datetime.today().strftime("%Y/%m/%d,%H:%M:%S") ))
-            subbest_test = float(correct/len(test_data))
-            
+                i_epoch, loss_mean, float(correct / len(test_data)),
+                datetime.today().strftime("%Y/%m/%d,%H:%M:%S")))
+            subbest_test = float(correct / len(test_data))
+
     # Evaluate on test dataset (no use of early stopping)
     #print('evaluate test')
     #loss_mean, correct = evaluate(test_data, model, args)
-    #print('epoch {} testloss: {:.4f}, accuracy: {:.3f}\t{}'.format(
+    # print('epoch {} testloss: {:.4f}, accuracy: {:.3f}\t{}'.format(
     #    i_epoch, loss_mean, float(correct/len(test_data)),
     #    datetime.today().strftime("%Y/%m/%d,%H:%M:%S") ))
 
@@ -246,8 +214,8 @@ def train_model(args):
 
 
 def save(model, optimizer, save_name, args):
-    serializers.save_npz(save_name+"model", copy.deepcopy(model).to_cpu())
-    serializers.save_npz(save_name+"optimizer", optimizer)
+    serializers.save_npz(save_name + "model", copy.deepcopy(model).to_cpu())
+    serializers.save_npz(save_name + "optimizer", optimizer)
     print('save', save_name)
 
 
@@ -264,14 +232,16 @@ def get_neg(pos, x_batch_seq, negative=-1):
     if negative <= 0:
         neg = xp.concatenate([pos[1:], pos[0:1]], axis=0)
     else:
-        switch = np.random.randint(0, negative)# stochastically switch negative type
-        # Note: np.random.randint can return 0,1,2,...,`negative-1`. (not including `negative`.)
-        if switch <= 3:# rewind negative
+        # stochastically switch negative type
+        switch = np.random.randint(0, negative)
+        # Note: np.random.randint can return 0,1,2,...,`negative-1`. (not
+        # including `negative`.)
+        if switch <= 3:  # rewind negative
             neg = x_batch_seq[switch]
             # Note: If you use one-by-one learning, this negative example can be not negative example.
             # (e.g., when this is the 3rd event and one-by-one learner
             #  has to predict anything of 2-5th or 3-5th events.)
-        else:# assign random other positive 5th event
+        else:  # assign random other positive 5th event
             neg = xp.concatenate([pos[1:], pos[0:1]], axis=0)
             # Just make 1-shifted batch (rotation) from positive 5-th event batch,
             # that is, the batch-idx 1's positive becomes the batch-dix 2's negative
@@ -284,29 +254,32 @@ def train_epoch(model, optimizer, train_data, valid_data, epoch, args):
     model.zerograds()
     whole_len = len(train_data)
     sum_loss_data = xp.zeros(())
-    
+
     # Replicability of mini-batch samplings.
     np.random.seed(args.seed + epoch)
     perm = np.random.permutation(len(train_data)).tolist()
 
     cur_at = time.time()
     sum_correct, processed, prev_i = 0., 0, 0
-    print("Epoch",epoch,"start.")
+    print("Epoch", epoch, "start.")
 
     for i in six.moves.range(0, len(train_data), args.batchsize):
         model.zerograds()
 
         # Make batch
-        batch_ids = perm[i:i+args.batchsize]
+        batch_ids = perm[i:i + args.batchsize]
         processed += len(batch_ids)
-        x_batch_seq = make_batch([train_data[idx:idx+1] for idx in batch_ids])
+        x_batch_seq = make_batch([train_data[idx:idx + 1]
+                                  for idx in batch_ids])
 
         # Calculate
         x_batch_seq, pos = x_batch_seq[:4], x_batch_seq[4]
         neg = get_neg(pos, x_batch_seq, args.negative_type)
 
-        # Replicability of dropout. All seeds should not be overlapped in whole training step.
-        model.xp.random.seed(args.seed + epoch * len(train_data) / args.batchsize + i)
+        # Replicability of dropout. All seeds should not be overlapped in whole
+        # training step.
+        model.xp.random.seed(args.seed + epoch *
+                             len(train_data) / args.batchsize + i)
         # Calculate loss
         loss, correct = model.solve(x_batch_seq, pos, neg,
                                     train=True, variablize=True, onebyone=args.onebyone)
@@ -326,35 +299,39 @@ def train_epoch(model, optimizer, train_data, valid_data, epoch, args):
 
             print('epoch {} iter {} loss: {:.5f}, accuracy: {:.4f} ({:.2f} iters/sec)\t{}'.format(
                 epoch, (i + len(batch_ids)), loss_mean,
-                float(sum_correct/processed), throuput,
-                datetime.today().strftime("%Y/%m/%d,%H:%M:%S") ))
+                float(sum_correct / processed), throuput,
+                datetime.today().strftime("%Y/%m/%d,%H:%M:%S")))
             cur_at = now
             sum_loss_data.fill(0)
             sum_correct, processed = 0., 0
 
         # Evaluate on validation set on the way
-        if i-prev_i > whole_len / args.frac_eval:
+        if i - prev_i > whole_len / args.frac_eval:
             prev_i = i
             now = time.time()
             print('evaluate')
             loss_mean, correct = evaluate(valid_data, model, args)
             print('epoch {} iter {} validloss: {:.5f}, accuracy: {:.4f} ({:.2f} iters/sec)\t{}'.format(
                 epoch, (i + len(batch_ids)), loss_mean,
-                float(correct/len(valid_data)), throuput,
-                datetime.today().strftime("%Y/%m/%d,%H:%M:%S") ))
+                float(correct / len(valid_data)), throuput,
+                datetime.today().strftime("%Y/%m/%d,%H:%M:%S")))
             cur_at += time.time() - now  # skip time of evaluation
             if args.save_path_model:
                 save_name = args.save_path_model + args.model_name + \
-                            ".%d.%s." % (epoch+(i*1.0/whole_len), datetime.today().strftime("%Y%m%d.%H%M%S"))
+                    ".%d.%s." % (epoch + (i * 1.0 / whole_len),
+                                 datetime.today().strftime("%Y%m%d.%H%M%S"))
                 save(model, optimizer, save_name, args)
+
 
 def evaluate(dataset, model, args):
     sum_correct = 0.
     sum_loss_data = xp.zeros(())
     for i in six.moves.range(0, len(dataset), args.batchsize):
-        x_batch_seq = make_batch([dataset[i+j:i+j+1] for j in range(args.batchsize)], train=False)
+        x_batch_seq = make_batch([dataset[i + j:i + j + 1]
+                                  for j in range(args.batchsize)], train=False)
         x_batch_seq, pos, neg = x_batch_seq[:4], x_batch_seq[4], x_batch_seq[5]
-        loss, correct = model.solve(x_batch_seq, pos, neg, train=False, variablize=True)
+        loss, correct = model.solve(
+            x_batch_seq, pos, neg, train=False, variablize=True)
         sum_loss_data += loss.data
         sum_correct += correct
     return cuda.to_cpu(sum_loss_data) / len(dataset), sum_correct
@@ -363,9 +340,10 @@ def evaluate(dataset, model, args):
 if __name__ == "__main__":
     print("##### ##### ##### #####")
     print(" ".join(sys.argv))
-    print("STARTING TIME:",datetime.today().strftime("%Y/%m/%d %H:%M:%S"))
+    print("STARTING TIME:", datetime.today().strftime("%Y/%m/%d %H:%M:%S"))
     print("##### ##### ##### #####")
-    for k, v in sorted(args.__dict__.items(), key=lambda x:len(x[0])): print("#",k,":\t",v)
+    for k, v in sorted(args.__dict__.items(),
+                       key=lambda x: len(x[0])): print("#", k, ":\t", v)
     print("##### ##### ##### #####")
 
     # Training
