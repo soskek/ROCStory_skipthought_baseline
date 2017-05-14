@@ -15,6 +15,7 @@ As a more proper baseline, I propose a novel (baseline) model using Skip-thought
 and it raise this task's baseline to 0.665 on test split and 0.682 on validation split.
 I expect it be a more precise evaluation criteria for proposed approaches in future.
 
+P.S. Parts of this repository are introduced in the paper, "An RNN-based Binary Classifier for the Story Cloze Test." by Melissa Roemmele, Sosuke Kobayashi, Naoya Inoue, and Andrew Gordon.
 
 ## Setup
 
@@ -93,13 +94,9 @@ If test/valid, its shape is like (1871, 6, 4800). The axes are like training ver
 
 ## Reference
 
-### The method in this repository
-This method is not published because I think it is just a simple baseline model and nothing fancy.
-However, if you use this baseline model,
-I would appreciate if you contact me (http://www.cl.ecei.tohoku.ac.jp/~sosuke.k/)
-and just display this repository's url in your paper.
-Of cource, you can modify the model better in your paper.
-Please ask me anything about this model.
+### Melissa Roemmele, Sosuke Kobayashi, Naoya Inoue, Andrew Gordon. "An RNN-based Binary Classifier for the Story Cloze Test." In proceedings of the 2nd Workshop on Linking Models of Lexical, Sentential and Discourse-level Semantics (LSDSem), Apr. 2017, http://www.coli.uni-saarland.de/~mroth/LSDSem/pdfs/LSDSem11.pdf
+
+Some ideas in this repository are introduced in this paper.
 
 
 ### Ryan Kiros, Yukun Zhu, Ruslan Salakhutdinov, Richard S. Zemel, Antonio Torralba, Raquel Urtasun, and Sanja Fidler. "Skip-Thought Vectors." NIPS 2015, https://papers.nips.cc/paper/5950-skip-thought-vectors.pdf
